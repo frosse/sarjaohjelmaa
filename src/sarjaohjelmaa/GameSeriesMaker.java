@@ -5,16 +5,18 @@ import java.util.Random;
 
 /*
     Sarjaohjelman tekijä-luokka
+    Vain staattisia metodeja, ei ole tarvetta tehtä objektia
  */
 
 public class GameSeriesMaker {
+
      static final Random rand = new Random();
 
     // Tehdään pelilista eli kaikki pelattavat pelit, siten että jokainen
     // joukkue pelaa toisiaan vastaan GameSeries-oliossa määritetyn määrän
     // Joka toisella kohtaamisella joukkueet käännetään toisinpäin (ensin kotona, sitten vieraissa, sitten kotona...)
 
-    public void makeGameList(GameSeries gs) {
+    public static void makeGameList(GameSeries gs) {
 
         for (int h = 0; h < gs.amount; h++) {
 
@@ -31,7 +33,7 @@ public class GameSeriesMaker {
     // Tehdään sarjataulukko. Arvotaan jokainen peli pelilistalta, jollekkin kierrokselle
     // Jos kierroksella on jo riittävä määrä pelejä eli joukkueet/2, niin generoidaan uusia indexejä niin kauan,
     // että peli mahtuu kierrokselle.
-    public void makeSeries(GameSeries gs) {
+    public static void makeSeries(GameSeries gs) {
 
         ArrayList<Game>[] series = gs.getSeries();
 

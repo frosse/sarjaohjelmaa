@@ -25,16 +25,18 @@ Arvo kaikki pelit satunnaisille kierroksille.
 public class Main {
 
     public static void main(String[] args) {
-        GameSeries gs = new GameSeries(8,2);
-        GameSeriesMaker maker = new GameSeriesMaker();
-        GameSeriesSolver solver = new GameSeriesSolver();
-        GameSeriesSolverBetter gs2 = new GameSeriesSolverBetter();
-        maker.makeGameList(gs);
-        gs.printGameList();
-        maker.makeSeries(gs);
-        gs.printSeries();
-        gs2.compareRound(gs.series[1]);
-        //solver.solveSeries(gs, 10);
-        //gs.printSeries();
+        GameSeries sarjaOhjelma = new GameSeries(20, 4);
+
+
+        //Tehdään pelilista sarjaohjelmalle
+        GameSeriesMaker.makeGameList(sarjaOhjelma);
+
+        //Tehdään random sarjaohjelma
+        GameSeriesMaker.makeSeries(sarjaOhjelma);
+
+
+        sarjaOhjelma.printSeries();
+
+        GameSeriesSolver.solveSeries(sarjaOhjelma);
     }
 }

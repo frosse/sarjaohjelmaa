@@ -11,11 +11,13 @@ public class GameSeries {
     int amount; //keskinäiset kohtaamiset
     int rounds;
     int gamesPerRound;
+
     ArrayList<Game> gameList = new ArrayList<>();
     ArrayList<Game>[] series;
 
     // Alustetaan muuttujat ja lasketaan pelattavat kierrokset
     // Tehdää arraysta ( series ), joka sisältää jokaisen kierroksen niin oikean mittainen
+
     public GameSeries(int teams, int amount) {
 
         this.teams = teams;

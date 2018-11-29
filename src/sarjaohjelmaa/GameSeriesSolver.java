@@ -1,101 +1,164 @@
 package sarjaohjelmaa;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 
 public class GameSeriesSolver {
 
-    Random random = new Random(100);
-    public void solveSeries(GameSeries gs, int maxRounds) {
-        boolean lopetus = false;
-        while (!lopetus) {
-            int[] virheet = new int[gs.series.length];
-            for (int i = 0; i < virheet.length; i++) {
-                virheet[i] = 0;
-            }
+    //
+    public static void solveSeries(GameSeries gs) {
+        GameSeries gameseries = gs;
+        boolean solved = false;
+        int counter = 0;
 
-            for (int i = 0; i < gs.series.length; i++) {
-                for (int j = 0; j < gs.series[i].size(); j++) {
-                    for (int k = j; k < gs.series[i].size(); k++) {
-                        if(j != k) {
-                            if (gs.series[i].get(j).home == gs.series[i].get(k).home) {
-                                virheet[i]++;
-                            } else if (gs.series[i].get(j).home == gs.series[i].get(k).away) {
-                                virheet[i]++;
-                            } else if (gs.series[i].get(j).away == gs.series[i].get(k).home) {
-                                virheet[i]++;
-                            } else if (gs.series[i].get(j).away == gs.series[i].get(k).away) {
-                                virheet[i]++;
-                            }
-                        }
-                    }
-                }
-            }
+        // Tällä arvolla määritellään koska algoritmi on jumissa.
+        int coefficient = 1000;
 
-            for (int i = 0; i < virheet.length; i++) {
-                //System.out.println(virheet[i]);
-            }
-            ArrayList<Game>[] newArray = new ArrayList[gs.series.length];
-            for (int i = 0; i < newArray.length; i++) {
-                newArray[i] = new ArrayList<>();
-            }
+        int limiter = gameseries.teams * gameseries.amount * coefficient;
 
-            int limit = gs.gamesPerRound;
-            Queue<Game> jono = new LinkedList<>();
-            Queue<Game> tempJono = new LinkedList<>();
+        while(!solved) {
 
-            for (int i = gs.series.length; i > 0 ; i--) {
-                for (int j = gs.series[i-1].size(); j > 0; j--) {
-                    jono.add(gs.series[i-1].get(j-1));
-                }
-            }
+            counter++;
+            // Otetaan pelin indeksit jossa on virhe talteen, jotta voidaan käsitellä sitä
+            int[] gameToBeRemoved = findFirstFault(gameseries);
+            int roundIndex = gameToBeRemoved[0];
+            int gameIndex = gameToBeRemoved[1];
 
-            for (int i = 0; i < newArray.length; i++) {
-                for (int j = 0; j < limit; j++) {
-                    if (jono.size() != 0) {
-                        Game temp = jono.remove();
-                        if (compareGameToList(temp, newArray[i])) {
-                            newArray[i].add(temp);
-                            int counter = jono.size();
-                            for (int k = 0; k < counter; k++) {
-                                tempJono.add(jono.remove());
-                            }
-                            jono = new LinkedList<>(tempJono);
-                            tempJono.clear();
-                        } else {
-                            tempJono.add(temp);
-                            j--;
-                        }
+            // Otetaan peli pois listalta ja lisätään tilalle null. Null lisätään jotta listassa pysyy oikea määrä pelejä
+            Game extraRoundGame = gameseries.series[roundIndex].get(gameIndex);
+            gameseries.series[roundIndex].remove(gameIndex);
+            gameseries.series[roundIndex].add(gameIndex, null);
+
+            // ALoitetaan kierroksesta, joka tulee virheen sisältäneen kierroksen jälkeen
+            for (int i = roundIndex + 1; i < gameseries.series.length; i++) {
+
+                // Käydään kierroksen jokainen peli läpi
+                for (int j = 0; j < gameseries.series[i].size(); j++) {
+
+                    // Lisätään peli listalle, jotta voidaan katsoa aiheuttaako se virheitä
+                    gameseries.series[roundIndex].remove(gameIndex);
+                    gameseries.series[roundIndex].add(gameIndex, gameseries.series[i].get(j));
+
+
+                    // Jos virheitä löytyy poistetaan testattava peli uudelta paikaltaan ja lisätään null tilalle
+                    if (doesGameHaveErrors(gameseries.series[roundIndex].get(gameIndex), gameseries.series[roundIndex])) {
+
+                        gameseries.series[roundIndex].remove(gameIndex);
+                        gameseries.series[roundIndex].add(gameIndex, null);
+
                     } else {
-                        for (int h = newArray.length; h > 0; h--) {
-                            int counter = limit - newArray[h-1].size();
-                            for (int k = 0; k < counter; k++) {
-                                if (tempJono.size() == 0) break;
-                                newArray[h-1].add(tempJono.remove());
-                            }
-                        }
+                        // Jos virheitä ei löydy niin asetetaan testattavan pelin alkuperäiselle paikalle null
+                        gameseries.series[i].remove(j);
+                        gameseries.series[i].add(j, null);
+
+                        //Valmistellaan indexit seuraavaa kierrosta varten ja poistutaan loopista
+                        gameToBeRemoved = new int[]{i, j};
+                        roundIndex = gameToBeRemoved[0];
+                        gameIndex = gameToBeRemoved[1];
+                        break;
                     }
                 }
             }
 
-            gs.series = newArray.clone();
+            // Etsitään sarjaohjelmasta null ja lisätään sivussa oleva peli listaan,
+            // jotta voidaan testata onko algoritmi valmis
+            for (int i = 0; i < gameseries.series.length; i++) {
+                for (int j = 0; j < gameseries.series[i].size(); j++) {
 
-            int sum = 0;
-            for (int i = 0; i < virheet.length; i++) {
-                sum += virheet[i];
+                    if (gameseries.series[i].get(j) == null) {
+
+                        gameseries.series[i].remove(j);
+                        gameseries.series[i].add(j, extraRoundGame);
+                    }
+                }
             }
-            if(sum == 0) {
-                lopetus = true;
+
+            // Sekoitetaan kierrokset.
+            // Tällä estetään paikallaan junnaaminen
+            Collections.shuffle(Arrays.asList(gameseries.series));
+
+            // Jos kaikki kierrokset ok, niin ei aloiteta uutta kierrosta
+            solved = checkAllRounds(gameseries.series);
+
+
+            // Jos ollaan kuitenkin jumissa niin tällä resetoidaan sarjaohjelma ja jatketaan nollista.
+            if(counter > limiter) {
+                System.out.println("I think I'm stuck here... Let me try to shuffle things...");
+                counter = 0;
+                GameSeriesMaker.makeSeries(gameseries);
             }
         }
+
+        System.out.println("----------------------------------------------------------------------");
+
+        gameseries.printSeries();
+
+        System.out.println("Solved!");
     }
 
-    public boolean compareGameToList(Game error, ArrayList<Game> list) {
-         for (int i = 0; i < list.size(); i++) {
-                 if(error.home == list.get(i).home || error.away == list.get(i).home ||
-                 error.home == list.get(i).away || error.away == list.get(i).away){
-                     return false;
-             }
-         }
+    // Palauttaa truen jos on virhe
+    public static boolean doesGameHaveErrors(Game game, ArrayList<Game> gameList) {
+        for (int i = 0; i < gameList.size(); i++) {
+            //palauttaa truen jos ei ole virheitä
+            if(game != gameList.get(i) && game != null && gameList.get(i) != null) {
+                if (!compareGames(game, gameList.get(i))) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    // Verrataan pelejä keskenään eli onko peleissä samoja joukkueita
+    // Jos ei virheitä palauttaa true
+    public static boolean compareGames(Game game1, Game game2) {
+        if (game1.home == game2.home) return false;
+        if (game1.home == game2.away) return false;
+        if (game1.away == game2.home) return false;
+        if (game1.away == game2.away) return false;
+        return true;
+    }
+
+    // checkataan onko kierroksella jo joukkueen pelejä
+    // jos virhe palautetaan false, muuten true
+    public static boolean compareRound(ArrayList<Game> gamesForRound) {
+        int fault[] = new int[gamesForRound.size()];
+        for (int i = 0; i < gamesForRound.size(); i++) {
+            for (int j = 0; j < gamesForRound.size(); j++) {
+                if(gamesForRound.get(i) != gamesForRound.get(j)) {
+                    if(!compareGames(gamesForRound.get(i), gamesForRound.get(j))) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    // Käydään sarjaohjelmaa läpi kunnes löydetään ensimmäinen virhe, palautetaan indeksit
+    public static int[] findFirstFault(GameSeries gameseries) {
+        for (int i = 0; i < gameseries.series.length; i++) {
+            for (int j = 0; j < gameseries.series[i].size(); j++) {
+                for (int k = 0; k < gameseries.series[k].size(); k++) {
+                    if (gameseries.series[i].get(j) != gameseries.series[i].get(k) && gameseries.series[i].get(k) != null && gameseries.series[i].get(j) != null) {
+                        if (!compareGames(gameseries.series[i].get(j), gameseries.series[i].get(k))) {
+                            return new int[]{i, j};
+                        }
+                    }
+                }
+            }
+        }
+        return new int[]{0,0};
+    }
+
+    // Käy läpi joka kierroksen ja kerää virheet talteen
+    public static boolean checkAllRounds(ArrayList<Game>[] series) {
+        for (int i = 0; i < series.length; i++) {
+            if(!compareRound(series[i])) {
+                return false;
+            }
+        }
         return true;
     }
 }

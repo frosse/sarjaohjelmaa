@@ -1,2 +1,2 @@
 # sarjaohjelmaa
-Java tenttitehtävä 
+Made in Java course as homework..
